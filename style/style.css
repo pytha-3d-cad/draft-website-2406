@@ -2,7 +2,6 @@
 html {
 	margin: 0;
 	padding: 0;
-
 }
 body {
 	font-family: "Calibri";
@@ -11,28 +10,86 @@ body {
 	margin: 0;
 	padding: 0;
 }
+#fixedmenu {
+	background-color: #363636;
+	position:fixed;
+	z-index: 1;
+	width:100%; 
+	padding-top:1rem;
+	height: 2rem;
+	box-shadow: 0 0 1rem 0rem #363636;
+}
 #header {
+	display: flex;
+	flex-direction: column;
+	flex-wrap: nowrap;
+	justify-content: space-between;
+	min-height: 100vh;
+
+	/* padding-top:2rem;
+	padding-bottom: 1rem; */
+	background-color: #363636;
+	color:#FFFFFF;
+	box-shadow: 0 0 1rem 0rem #363636;
+	
+}
+#footer {
+	font-size: 1rem;
+	color:#FFFFFF;
+	background-color: #363636;
+	box-shadow: 0 0 1rem 0rem #363636;
+}
+#titlebar {
+	display: flexbox;
+	flex-grow: 0;
+	z-index: 3;
+	padding-top: 3rem;
+	min-height: 4rem;
+	background-color: #363636;
 	font-size: 2.4rem;
 	font-weight: bold;
 	line-height: 150%;
-	padding-top:2rem;
-	overflow: show;
+	
+}
+#titleimage {
+	display: flexbox;
+	flex-grow: 1;
+	z-index: 2;
+	bottom: 0px;
+	min-height: 8rem;
+	/* max-height: 70vh; */
+	background-image: url(../kitchen-sketch-white.png);
+	background-size: cover;
+	background-position: center;
+	box-shadow: 0 0 0rem 0.5rem #363636;
+	border-bottom: 1rem #363636 solid;
+}
+
+#titleheading {
+	display: flexbox;
+	flex-grow: 0;
+	padding-top: 0;
+	margin-top: 0;
+	margin-bottom: 0.5rem;
+	width:100%;
 }
 #logocontainer {
+	/* background: red; */
 	float:left;
-	overflow: visible;
+	/* overflow: visible; */
 	position: relative;
 	width: 7em;
 	margin-right: 1em;
 	margin-left: 2rem;
 }
-.fullimage {
-	min-height: 15rem;
-	max-height: 70vh;
-	margin-top: 1rem;
-	background-image: url(../kitchen-sketch-white.png);
-	background-size: cover;
-	background-position: center;
+#minilogo {
+	/* background: red; */
+	float:left;
+	/* overflow: visible; */
+	position: relative;
+	width: 3em;
+	margin-right: 1em;
+	margin-left: 2rem;
 }
 #logo {
 	height:150%;
