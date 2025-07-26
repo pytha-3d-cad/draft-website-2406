@@ -237,15 +237,15 @@ a {
 }
 .overlay {
   opacity: 0;
-  transition: opacity 1s ease-out;
+  transition: opacity 3s ease-out;
 }
 
 .overlay.visible {
-  opacity: 0.2;
+  opacity: 1;
 }
 
 .flicker {
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.8s ease-in-out;
+  transition: opacity 0.1s ease-in-out;
 }
