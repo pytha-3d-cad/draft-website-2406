@@ -9,7 +9,7 @@ window.addEventListener('scroll', () => {
   const scrollTop = window.scrollY;
   const windowHeight = window.innerHeight;
   const maxScroll = windowHeight;
-  const opacity = Math.max(0, 0.2 * (1 - scrollTop / maxScroll));
+  const opacity = Math.max(0, 0.5 * (scrollTop / maxScroll));
   overlay.style.opacity = opacity.toFixed(2);
 });
 
