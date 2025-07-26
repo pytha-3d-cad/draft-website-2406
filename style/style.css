@@ -237,7 +237,7 @@ a {
 }
 .overlay {
   opacity: 0;
-  transition: opacity 1s ease-out;
+  transition: opacity 3s ease-out;
 }
 
 .overlay.visible {
