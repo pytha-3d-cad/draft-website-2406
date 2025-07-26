@@ -1,25 +1,30 @@
 const overlay = document.getElementById('overlay');
 const flicker = document.getElementById('flicker');
 const container = document.getElementById('imageContainer');
-
 let flickerInterval = null;
 
-// Scroll-driven opacity for overlay image
-window.addEventListener('scroll', () => {
-  const scrollTop = window.scrollY;
-  const windowHeight = window.innerHeight;
-  const maxScroll = windowHeight;
-  const opacity = Math.max(0, 1 * (scrollTop / maxScroll));
-  overlay.style.opacity = opacity.toFixed(2);
-});
+// 🔍 Fade in overlay once it enters the screen
+const observer = new IntersectionObserver(
+  (entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        overlay.classList.add('visible');
+        observer.unobserve(entry.target); // fade in only once
+      }
+    });
+  },
+  {
+    threshold: 0.5, // 50% of container visible
+  }
+);
+observer.observe(container);
 
-// Flicker effect logic
+// 🔥 Flicker effect for candle image
 function startFlicker() {
-  if (flickerInterval) return; // prevent duplicates
-   overlay.style.opacity = 1;
-  flicker.style.opacity = 0.1;
+  if (flickerInterval) return;
+  flicker.style.opacity = 1;
   flickerInterval = setInterval(() => {
-    const randomOpacity = 0.1 + Math.random() * 0.1;
+    const randomOpacity = 0.4 + Math.random() * 0.6;
     flicker.style.opacity = randomOpacity.toFixed(2);
   }, 100);
 }
@@ -30,17 +35,8 @@ function stopFlicker() {
   flicker.style.opacity = 0;
 }
 
-// Desktop: hover
+// Support both hover (desktop) and touch (mobile)
 container.addEventListener('mouseenter', startFlicker);
 container.addEventListener('mouseleave', stopFlicker);
-
-// Mobile: tap
 container.addEventListener('touchstart', startFlicker);
 container.addEventListener('touchend', stopFlicker);
-
-// Optional: stop flicker if user scrolls away
-window.addEventListener('scroll', () => {
-  if (window.scrollY > window.innerHeight) {
-    stopFlicker();
-  }
-});
