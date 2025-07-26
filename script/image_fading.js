@@ -24,7 +24,7 @@ function startFlicker() {
   if (flickerInterval) return;
   flicker.style.opacity = 1;
   flickerInterval = setInterval(() => {
-    const randomOpacity = 0.8 + Math.random() * 0.2;
+    const randomOpacity = 0.2 + Math.random() * 0.2;
     flicker.style.opacity = randomOpacity.toFixed(2);
   }, 100);
 }
