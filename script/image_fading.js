@@ -1,6 +1,7 @@
 const overlay = document.getElementById('overlay');
 const flicker = document.getElementById('flicker');
 const container = document.getElementById('imageContainer');
+const container2 = document.getElementById('imageContainer2');
 let flickerInterval = null;
 
 // 🔍 Fade in overlay once it enters the screen
@@ -18,6 +19,7 @@ const observer = new IntersectionObserver(
   }
 );
 observer.observe(container);
+observer.observe(container2);
 
 // 🔥 Flicker effect for candle image
 function startFlicker() {
@@ -40,3 +42,7 @@ container.addEventListener('mouseenter', startFlicker);
 container.addEventListener('mouseleave', stopFlicker);
 container.addEventListener('touchstart', startFlicker);
 container.addEventListener('touchend', stopFlicker);
+container2.addEventListener('mouseenter', startFlicker);
+container2.addEventListener('mouseleave', stopFlicker);
+container2.addEventListener('touchstart', startFlicker);
+container2.addEventListener('touchend', stopFlicker);
