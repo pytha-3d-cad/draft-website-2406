@@ -216,15 +216,7 @@ a {
 	color: inherit;
 }
 
-/* Reset & layout */
-body, html {
-  margin: 0;
-  padding: 0;
-  height: 200vh;
-  font-family: sans-serif;
-  background: #000;
-  overflow-x: hidden;
-}
+
 
 .image-container {
   position: relative;
@@ -255,16 +247,4 @@ body, html {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.1s ease-in-out;
-}
-
-/* Scroll hint area */
-.spacer {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: white;
-  font-size: 1.5rem;
-  text-align: center;
-  padding: 1rem;
 }
