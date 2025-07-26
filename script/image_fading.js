@@ -18,7 +18,7 @@ function startFlicker() {
   if (flickerInterval) return; // prevent duplicates
   flicker.style.opacity = 1;
   flickerInterval = setInterval(() => {
-    const randomOpacity = 0.4 + Math.random() * 0.6;
+    const randomOpacity = 0.1 + Math.random() * 0.1;
     flicker.style.opacity = randomOpacity.toFixed(2);
   }, 100);
 }
