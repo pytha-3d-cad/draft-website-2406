@@ -236,8 +236,12 @@ a {
   object-fit: cover;
 }
 .overlay {
+  opacity: 0;
+  transition: opacity 1s ease-out;
+}
+
+.overlay.visible {
   opacity: 1;
-  transition: opacity 0.1s ease-out;
 }
 
 .flicker {
