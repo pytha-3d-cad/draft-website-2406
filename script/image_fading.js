@@ -32,11 +32,22 @@ updateOpacityOnScroll(); // initial call
 // Flicker logic
 function startFlicker() {
   if (flickerInterval) return;
-  flickerInterval = setInterval(() => {
-    const randomOpacity = 0.4 + Math.random() * 0.6;
-    hover.style.opacity = 1;
-    flicker.style.opacity = randomOpacity.toFixed(2);
-  }, 100);
+  hover.style.opacity = 1;
+  
+  const onTransitionEnd = (event) => {
+    if (event.propertyName === 'opacity') {
+      // Only trigger once
+      hover.removeEventListener('transitionend', onTransitionEnd);
+
+      // Start flicker after hover has faded in
+      flickerInterval = setInterval(() => {
+        const randomOpacity = 0.4 + Math.random() * 0.6;
+        flicker.style.opacity = randomOpacity.toFixed(2);
+      }, 100);
+    }
+  };
+      
+  hover.addEventListener('transitionend', onTransitionEnd);
 }
 function stopFlicker() {
   clearInterval(flickerInterval);
