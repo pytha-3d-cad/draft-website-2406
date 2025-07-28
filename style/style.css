@@ -222,14 +222,15 @@ a {
   position: relative;
   width: 100%;
   max-width: 32rem;
-  aspect-ratio: 1 / 1; /* or based on your image shape */
+  aspect-ratio: 1 / 1;
   margin: 4rem auto;
   overflow: hidden;
 }
 
 .image-container img {
-  position: absolute;
-  top: 0; left: 0;
+  position: absolute;       /* <-- key line for stacking */
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
