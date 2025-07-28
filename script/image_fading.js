@@ -1,7 +1,5 @@
 const overlay = document.getElementById('overlay');
 const flicker = document.getElementById('flicker');
-const overlay = document.getElementById('overlay');
-const flicker = document.getElementById('flicker');
 const container = document.getElementById('imageContainer');
 let flickerInterval = null;
 
