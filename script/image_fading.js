@@ -3,29 +3,36 @@ const flicker = document.getElementById('flicker');
 const container = document.getElementById('imageContainer');
 let flickerInterval = null;
 
-// 🔍 Fade in overlay once it enters the screen
-const observer = new IntersectionObserver(
-  (entries, observer) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        overlay.classList.add('visible');
-        observer.unobserve(entry.target); // fade in only once
-      }
-    });
-  },
-  {
-    threshold: 0.5, // 50% of container visible
-  }
-);
-observer.observe(container);
+// Function to map a value to 0–1 range
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(value, max));
+}
 
+// Scroll-driven opacity based on proximity to viewport center
+function updateOpacityOnScroll() {
+  const rect = container.getBoundingClientRect();
+  const windowCenter = window.innerHeight / 2;
+  const imageCenter = rect.top + rect.height / 2;
 
-// 🔥 Flicker effect for candle image
+  // Distance from image center to screen center
+  const distance = Math.abs(windowCenter - imageCenter);
+  const maxDistance = window.innerHeight / 2; // max range to fully fade out
+
+  // Opacity decreases as distance increases
+  const opacity = clamp(1 - distance / maxDistance, 0, 1);
+  overlay.style.opacity = opacity.toFixed(2);
+}
+
+// Track scroll and resize
+window.addEventListener('scroll', updateOpacityOnScroll);
+window.addEventListener('resize', updateOpacityOnScroll);
+updateOpacityOnScroll(); // initial call
+
+// Flicker logic
 function startFlicker() {
   if (flickerInterval) return;
-  flicker.style.opacity = 0.8;
   flickerInterval = setInterval(() => {
-    const randomOpacity = 0.8 + Math.random() * 0.8;
+    const randomOpacity = 0.4 + Math.random() * 0.6;
     flicker.style.opacity = randomOpacity.toFixed(2);
   }, 100);
 }
@@ -35,7 +42,6 @@ function stopFlicker() {
   flicker.style.opacity = 0;
 }
 
-// Support both hover (desktop) and touch (mobile)
 container.addEventListener('mouseenter', startFlicker);
 container.addEventListener('mouseleave', stopFlicker);
 container.addEventListener('touchstart', startFlicker);
