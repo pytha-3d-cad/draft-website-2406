@@ -1,5 +1,6 @@
 const overlay = document.getElementById('overlay');
 const flicker = document.getElementById('flicker');
+const hover = document.getElementById('hover');
 const container = document.getElementById('imageContainer');
 let flickerInterval = null;
 
@@ -33,12 +34,14 @@ function startFlicker() {
   if (flickerInterval) return;
   flickerInterval = setInterval(() => {
     const randomOpacity = 0.4 + Math.random() * 0.6;
+    hover.style.opacity = 1;
     flicker.style.opacity = randomOpacity.toFixed(2);
   }, 100);
 }
 function stopFlicker() {
   clearInterval(flickerInterval);
   flickerInterval = null;
+  hover.style.opacity = 0;
   flicker.style.opacity = 0;
 }
 
