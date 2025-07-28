@@ -219,34 +219,31 @@ a {
 
 
 .image-container {
-	position: relative;
-	margin-top: 2rem;
-	max-width: 32rem;
-	padding-left: 1rem;
-	padding-right: 1rem;
-	margin-left: auto;
-	margin-right: auto;
+  position: relative;
+  width: 100%;
+  max-width: 32rem;
+  aspect-ratio: 1 / 1; /* or based on your image shape */
+  margin: 4rem auto;
   overflow: hidden;
-  touch-action: manipulation;
 }
 
-/* Common image styling */
 .image-container img {
-	width: 32rem;
-	height: 32rem;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
 }
+
 .overlay {
   opacity: 0;
-  transition: opacity 3s ease-out;
-}
-
-.overlay.visible {
-  opacity: 1;
+  transition: opacity 0.3s ease-out;
+  z-index: 1;
 }
 
 .flicker {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease-in-out;
+  z-index: 2;
 }
