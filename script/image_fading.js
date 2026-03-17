@@ -61,7 +61,6 @@ container.addEventListener('mouseleave', stopFlicker);
 container.addEventListener('touchstart', startFlicker);
 container.addEventListener('touchend', stopFlicker);*/
 
-
 (function()
 {
 	const container = document.getElementById("imageContainer");
@@ -90,8 +89,9 @@ container.addEventListener('touchend', stopFlicker);*/
 	let targetOverlayOpacity = 0;
 	let targetHoverOpacity = 0;
 
-	const APPROACH_MARGIN = 220;
-	const OPACITY_EASING = 0.055;
+	const APPROACH_MARGIN = 300;
+	const OPACITY_EASING = 0.09;
+	const EDGE_FADE_REM = 1.5;
 
 	function clamp(value, min, max)
 	{
@@ -108,29 +108,9 @@ container.addEventListener('touchend', stopFlicker);*/
 		rect = container.getBoundingClientRect();
 	}
 
-	function getCenter()
+	function getRootFontSize()
 	{
-		if (!rect) {
-			updateRect();
-		}
-
-		return {
-			x: rect.left + rect.width * 0.5,
-			y: rect.top + rect.height * 0.5
-		};
-	}
-
-	function getNormalizedDistance(clientX, clientY)
-	{
-		const center = getCenter();
-
-		const dx = clientX - center.x;
-		const dy = clientY - center.y;
-
-		const nx = dx / (rect.width * 0.5);
-		const ny = dy / (rect.height * 0.5);
-
-		return Math.min(Math.sqrt(nx * nx + ny * ny), 1.5);
+		return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
 	}
 
 	function isNearContainer(clientX, clientY)
@@ -145,6 +125,43 @@ container.addEventListener('touchend', stopFlicker);*/
 			clientY >= rect.top - APPROACH_MARGIN &&
 			clientY <= rect.bottom + APPROACH_MARGIN
 		);
+	}
+
+	function getInsideEdgeProximity(clientX, clientY)
+	{
+		if (!rect) {
+			updateRect();
+		}
+
+		const edgeFadePx = EDGE_FADE_REM * getRootFontSize();
+
+		const distLeft = clientX - rect.left;
+		const distRight = rect.right - clientX;
+		const distTop = clientY - rect.top;
+		const distBottom = rect.bottom - clientY;
+
+		const minEdgeDist = Math.min(distLeft, distRight, distTop, distBottom);
+
+		return clamp(minEdgeDist / edgeFadePx, 0, 1);
+	}
+
+	function getApproachProximity(clientX, clientY)
+	{
+		if (!rect) {
+			updateRect();
+		}
+
+		const dx =
+			clientX < rect.left ? rect.left - clientX :
+			clientX > rect.right ? clientX - rect.right : 0;
+
+		const dy =
+			clientY < rect.top ? rect.top - clientY :
+			clientY > rect.bottom ? clientY - rect.bottom : 0;
+
+		const dist = Math.sqrt(dx * dx + dy * dy);
+
+		return clamp(1 - dist / APPROACH_MARGIN, 0, 1);
 	}
 
 	function updateTargets()
@@ -164,22 +181,15 @@ container.addEventListener('touchend', stopFlicker);*/
 		}
 
 		if (isInside) {
-			const insideProximity = clamp(1 - getNormalizedDistance(mouseX, mouseY), 0, 1);
+			const edgeProximity = getInsideEdgeProximity(mouseX, mouseY);
 
-			targetOverlayOpacity = 0.35 + insideProximity * 0.65;
-			targetHoverOpacity = 0.18 + insideProximity * 0.82;
+			targetOverlayOpacity = 0.55 + edgeProximity * 0.45;
+			targetHoverOpacity = 0.82 + edgeProximity * 0.18;
 		} else {
-			const center = getCenter();
-			const dx = mouseX - center.x;
-			const dy = mouseY - center.y;
+			const approach = getApproachProximity(mouseX, mouseY);
 
-			const nx = dx / ((rect.width + APPROACH_MARGIN * 2) * 0.5);
-			const ny = dy / ((rect.height + APPROACH_MARGIN * 2) * 0.5);
-			const dist = Math.min(Math.sqrt(nx * nx + ny * ny), 1.5);
-			const approach = clamp(1 - dist, 0, 1);
-
-			targetOverlayOpacity = approach * 0.45;
-			targetHoverOpacity = approach > 0.38 ? (approach - 0.38) / 0.62 * 0.55 : 0;
+			targetOverlayOpacity = approach * 0.68;
+			targetHoverOpacity = approach > 0.18 ? (approach - 0.18) / 0.82 * 0.42 : 0;
 		}
 	}
 
