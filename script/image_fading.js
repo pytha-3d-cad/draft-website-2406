@@ -65,15 +65,18 @@ container.addEventListener('touchend', stopFlicker);*/
 {
 	const containers = document.querySelectorAll(".image-container");
 
-	if (!containers.length) return;
+	if (!containers.length) {
+		return;
+	}
 
-	const APPROACH_MARGIN = 260;
+	const APPROACH_MARGIN = 300;
 	const OPACITY_EASING = 0.09;
-	const EDGE_FADE_REM = 2;
+	const EDGE_FADE_REM = 1.5;
 
 	let mouseX = 0;
 	let mouseY = 0;
 	let hasPointer = false;
+	let hasActiveInstances = false;
 
 	function clamp(v, min, max)
 	{
@@ -96,7 +99,9 @@ container.addEventListener('touchend', stopFlicker);*/
 		const hoverImg = container.querySelector(".hover");
 		const flicker = container.querySelector(".flicker");
 
-		if (!overlay || !hoverImg) return null;
+		if (!overlay || !hoverImg) {
+			return null;
+		}
 
 		if (flicker) {
 			flicker.style.display = "none";
@@ -104,11 +109,12 @@ container.addEventListener('touchend', stopFlicker);*/
 		}
 
 		return {
-			container,
-			overlay,
-			hoverImg,
+			container: container,
+			overlay: overlay,
+			hoverImg: hoverImg,
 			rect: null,
 			isInside: false,
+			isVisible: false,
 			currentOverlayOpacity: 0,
 			currentHoverOpacity: 0,
 			targetOverlayOpacity: 0,
@@ -120,9 +126,34 @@ container.addEventListener('touchend', stopFlicker);*/
 		.map(createInstance)
 		.filter(Boolean);
 
+	if (!instances.length) {
+		return;
+	}
+
 	function updateRect(instance)
 	{
 		instance.rect = instance.container.getBoundingClientRect();
+	}
+
+	function refreshRects()
+	{
+		for (const inst of instances) {
+			if (inst.isVisible || inst.isInside) {
+				updateRect(inst);
+			}
+		}
+	}
+
+	function updateActiveState()
+	{
+		hasActiveInstances = false;
+
+		for (const inst of instances) {
+			if (inst.isVisible || inst.isInside) {
+				hasActiveInstances = true;
+				return;
+			}
+		}
 	}
 
 	function isNear(instance)
@@ -189,9 +220,8 @@ container.addEventListener('touchend', stopFlicker);*/
 			const edge = getEdgeProximity(instance);
 
 			instance.targetOverlayOpacity = 0.55 + edge * 0.45;
-			instance.targetHoverOpacity = 0.70 + edge * 0.30;
-		}
-		else {
+			instance.targetHoverOpacity = 0.82 + edge * 0.18;
+		} else {
 			const a = getApproach(instance);
 
 			instance.targetOverlayOpacity = a * 0.68;
@@ -201,55 +231,112 @@ container.addEventListener('touchend', stopFlicker);*/
 
 	function render()
 	{
-		for (const inst of instances)
-		{
-			updateTargets(inst);
+		if (hasActiveInstances) {
+			for (const inst of instances)
+			{
+				if (!inst.isVisible && !inst.isInside) {
+					if (inst.currentOverlayOpacity !== 0 || inst.currentHoverOpacity !== 0) {
+						inst.currentOverlayOpacity = lerp(inst.currentOverlayOpacity, 0, OPACITY_EASING);
+						inst.currentHoverOpacity = lerp(inst.currentHoverOpacity, 0, OPACITY_EASING);
 
-			inst.currentOverlayOpacity = lerp(inst.currentOverlayOpacity, inst.targetOverlayOpacity, OPACITY_EASING);
-			inst.currentHoverOpacity = lerp(inst.currentHoverOpacity, inst.targetHoverOpacity, OPACITY_EASING);
+						if (inst.currentOverlayOpacity < 0.001) inst.currentOverlayOpacity = 0;
+						if (inst.currentHoverOpacity < 0.001) inst.currentHoverOpacity = 0;
 
-			inst.overlay.style.opacity = inst.currentOverlayOpacity.toFixed(3);
-			inst.hoverImg.style.opacity = inst.currentHoverOpacity.toFixed(3);
+						inst.overlay.style.opacity = inst.currentOverlayOpacity.toFixed(3);
+						inst.hoverImg.style.opacity = inst.currentHoverOpacity.toFixed(3);
+					}
+					continue;
+				}
+
+				updateTargets(inst);
+
+				inst.currentOverlayOpacity = lerp(inst.currentOverlayOpacity, inst.targetOverlayOpacity, OPACITY_EASING);
+				inst.currentHoverOpacity = lerp(inst.currentHoverOpacity, inst.targetHoverOpacity, OPACITY_EASING);
+
+				inst.overlay.style.opacity = inst.currentOverlayOpacity.toFixed(3);
+				inst.hoverImg.style.opacity = inst.currentHoverOpacity.toFixed(3);
+			}
 		}
 
 		requestAnimationFrame(render);
 	}
 
-	function onPointerMove(e)
+	const observer = new IntersectionObserver(
+		function(entries)
+		{
+			for (const entry of entries)
+			{
+				const inst = entry.target.__imageFadeInstance;
+				if (!inst) {
+					continue;
+				}
+
+				inst.isVisible = entry.isIntersecting;
+
+				if (inst.isVisible) {
+					updateRect(inst);
+				} else if (!inst.isInside) {
+					inst.targetOverlayOpacity = 0;
+					inst.targetHoverOpacity = 0;
+				}
+			}
+
+			updateActiveState();
+		},
+		{
+			root: null,
+			rootMargin: APPROACH_MARGIN + "px",
+			threshold: 0
+		}
+	);
+
+	for (const inst of instances)
+	{
+		inst.container.__imageFadeInstance = inst;
+
+		inst.container.addEventListener("mouseenter", function(e)
+		{
+			inst.isInside = true;
+			hasPointer = true;
+			mouseX = e.clientX;
+			mouseY = e.clientY;
+			updateRect(inst);
+			updateActiveState();
+		});
+
+		inst.container.addEventListener("mousemove", function(e)
+		{
+			hasPointer = true;
+			mouseX = e.clientX;
+			mouseY = e.clientY;
+		});
+
+		inst.container.addEventListener("mouseleave", function()
+		{
+			inst.isInside = false;
+			updateActiveState();
+		});
+
+		updateRect(inst);
+		observer.observe(inst.container);
+	}
+
+	window.addEventListener("mousemove", function(e)
 	{
 		hasPointer = true;
 		mouseX = e.clientX;
 		mouseY = e.clientY;
-	}
+	}, { passive: true });
 
-	function onResizeOrScroll()
+	window.addEventListener("resize", function()
 	{
-		for (const inst of instances) {
-			updateRect(inst);
-		}
-	}
+		refreshRects();
+	});
 
-	for (const inst of instances)
+	window.addEventListener("scroll", function()
 	{
-		inst.container.addEventListener("mouseenter", (e) =>
-		{
-			inst.isInside = true;
-			mouseX = e.clientX;
-			mouseY = e.clientY;
-			updateRect(inst);
-		});
-
-		inst.container.addEventListener("mouseleave", () =>
-		{
-			inst.isInside = false;
-		});
-
-		updateRect(inst);
-	}
-
-	window.addEventListener("mousemove", onPointerMove, { passive: true });
-	window.addEventListener("resize", onResizeOrScroll);
-	window.addEventListener("scroll", onResizeOrScroll, { passive: true });
+		refreshRects();
+	}, { passive: true });
 
 	requestAnimationFrame(render);
 })();
