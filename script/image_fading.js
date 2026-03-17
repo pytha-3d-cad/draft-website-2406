@@ -62,7 +62,6 @@ container.addEventListener('touchstart', startFlicker);
 container.addEventListener('touchend', stopFlicker);*/
 
 
-
 (function()
 {
 	const container = document.getElementById("imageContainer");
@@ -80,17 +79,11 @@ container.addEventListener('touchend', stopFlicker);*/
 	}
 
 	let rect = null;
-	let rafId = 0;
 
 	let mouseX = 0;
 	let mouseY = 0;
 	let hasPointer = false;
 	let isInside = false;
-
-	let currentX = 0;
-	let currentY = 0;
-	let targetX = 0;
-	let targetY = 0;
 
 	let currentOverlayOpacity = 0;
 	let currentHoverOpacity = 0;
@@ -98,10 +91,6 @@ container.addEventListener('touchend', stopFlicker);*/
 	let targetHoverOpacity = 0;
 
 	const APPROACH_MARGIN = 220;
-	const OVERLAY_SHIFT = 14;
-	const HOVER_SHIFT = 7;
-
-	const POSITION_EASING = 0.065;
 	const OPACITY_EASING = 0.055;
 
 	function clamp(value, min, max)
@@ -131,7 +120,7 @@ container.addEventListener('touchend', stopFlicker);*/
 		};
 	}
 
-	function getNormalizedOffset(clientX, clientY)
+	function getNormalizedDistance(clientX, clientY)
 	{
 		const center = getCenter();
 
@@ -141,11 +130,7 @@ container.addEventListener('touchend', stopFlicker);*/
 		const nx = dx / (rect.width * 0.5);
 		const ny = dy / (rect.height * 0.5);
 
-		return {
-			x: clamp(nx, -1, 1),
-			y: clamp(ny, -1, 1),
-			dist: Math.min(Math.sqrt(nx * nx + ny * ny), 1.5)
-		};
+		return Math.min(Math.sqrt(nx * nx + ny * ny), 1.5);
 	}
 
 	function isNearContainer(clientX, clientY)
@@ -165,8 +150,6 @@ container.addEventListener('touchend', stopFlicker);*/
 	function updateTargets()
 	{
 		if (!hasPointer || !rect) {
-			targetX = 0;
-			targetY = 0;
 			targetOverlayOpacity = 0;
 			targetHoverOpacity = 0;
 			return;
@@ -175,20 +158,13 @@ container.addEventListener('touchend', stopFlicker);*/
 		const near = isNearContainer(mouseX, mouseY);
 
 		if (!near && !isInside) {
-			targetX = 0;
-			targetY = 0;
 			targetOverlayOpacity = 0;
 			targetHoverOpacity = 0;
 			return;
 		}
 
-		const offset = getNormalizedOffset(mouseX, mouseY);
-
-		targetX = offset.x * OVERLAY_SHIFT;
-		targetY = offset.y * OVERLAY_SHIFT;
-
 		if (isInside) {
-			const insideProximity = clamp(1 - offset.dist, 0, 1);
+			const insideProximity = clamp(1 - getNormalizedDistance(mouseX, mouseY), 0, 1);
 
 			targetOverlayOpacity = 0.35 + insideProximity * 0.65;
 			targetHoverOpacity = 0.18 + insideProximity * 0.82;
@@ -211,23 +187,16 @@ container.addEventListener('touchend', stopFlicker);*/
 	{
 		updateTargets();
 
-		currentX = lerp(currentX, targetX, POSITION_EASING);
-		currentY = lerp(currentY, targetY, POSITION_EASING);
-
 		currentOverlayOpacity = lerp(currentOverlayOpacity, targetOverlayOpacity, OPACITY_EASING);
 		currentHoverOpacity = lerp(currentHoverOpacity, targetHoverOpacity, OPACITY_EASING);
-
-		overlay.style.transform =
-			"translate3d(" + currentX.toFixed(2) + "px, " + currentY.toFixed(2) + "px, 0) scale(1.02)";
-
-		hoverImg.style.transform =
-			"translate3d(" + (currentX * (HOVER_SHIFT / OVERLAY_SHIFT)).toFixed(2) + "px, " +
-			(currentY * (HOVER_SHIFT / OVERLAY_SHIFT)).toFixed(2) + "px, 0) scale(1.01)";
 
 		overlay.style.opacity = currentOverlayOpacity.toFixed(3);
 		hoverImg.style.opacity = currentHoverOpacity.toFixed(3);
 
-		rafId = window.requestAnimationFrame(render);
+		overlay.style.transform = "translate3d(0, 0, 0) scale(1)";
+		hoverImg.style.transform = "translate3d(0, 0, 0) scale(1)";
+
+		window.requestAnimationFrame(render);
 	}
 
 	function onPointerMove(event)
@@ -265,5 +234,5 @@ container.addEventListener('touchend', stopFlicker);*/
 	window.addEventListener("scroll", onResizeOrScroll, { passive: true });
 
 	updateRect();
-	rafId = window.requestAnimationFrame(render);
+	window.requestAnimationFrame(render);
 })();
