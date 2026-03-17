@@ -1,4 +1,4 @@
-const overlay = document.getElementById('overlay');
+/*const overlay = document.getElementById('overlay');
 const flicker = document.getElementById('flicker');
 const hover = document.getElementById('hover');
 const container = document.getElementById('imageContainer');
@@ -59,4 +59,211 @@ function stopFlicker() {
 container.addEventListener('mouseenter', startFlicker);
 container.addEventListener('mouseleave', stopFlicker);
 container.addEventListener('touchstart', startFlicker);
-container.addEventListener('touchend', stopFlicker);
+container.addEventListener('touchend', stopFlicker);*/
+
+
+
+(function()
+{
+	const container = document.getElementById("imageContainer");
+	const overlay = document.getElementById("overlay");
+	const hoverImg = document.getElementById("hover");
+	const flicker = document.getElementById("flicker");
+
+	if (!container || !overlay || !hoverImg) {
+		return;
+	}
+
+	if (flicker) {
+		flicker.style.display = "none";
+		flicker.style.opacity = "0";
+	}
+
+	let rect = null;
+	let rafId = 0;
+
+	let mouseX = 0;
+	let mouseY = 0;
+	let hasPointer = false;
+	let isInside = false;
+
+	let currentX = 0;
+	let currentY = 0;
+	let targetX = 0;
+	let targetY = 0;
+
+	let currentOverlayOpacity = 0;
+	let currentHoverOpacity = 0;
+	let targetOverlayOpacity = 0;
+	let targetHoverOpacity = 0;
+
+	const APPROACH_MARGIN = 220;
+	const OVERLAY_SHIFT = 14;
+	const HOVER_SHIFT = 7;
+
+	const POSITION_EASING = 0.065;
+	const OPACITY_EASING = 0.055;
+
+	function clamp(value, min, max)
+	{
+		return Math.max(min, Math.min(max, value));
+	}
+
+	function lerp(current, target, factor)
+	{
+		return current + (target - current) * factor;
+	}
+
+	function updateRect()
+	{
+		rect = container.getBoundingClientRect();
+	}
+
+	function getCenter()
+	{
+		if (!rect) {
+			updateRect();
+		}
+
+		return {
+			x: rect.left + rect.width * 0.5,
+			y: rect.top + rect.height * 0.5
+		};
+	}
+
+	function getNormalizedOffset(clientX, clientY)
+	{
+		const center = getCenter();
+
+		const dx = clientX - center.x;
+		const dy = clientY - center.y;
+
+		const nx = dx / (rect.width * 0.5);
+		const ny = dy / (rect.height * 0.5);
+
+		return {
+			x: clamp(nx, -1, 1),
+			y: clamp(ny, -1, 1),
+			dist: Math.min(Math.sqrt(nx * nx + ny * ny), 1.5)
+		};
+	}
+
+	function isNearContainer(clientX, clientY)
+	{
+		if (!rect) {
+			updateRect();
+		}
+
+		return (
+			clientX >= rect.left - APPROACH_MARGIN &&
+			clientX <= rect.right + APPROACH_MARGIN &&
+			clientY >= rect.top - APPROACH_MARGIN &&
+			clientY <= rect.bottom + APPROACH_MARGIN
+		);
+	}
+
+	function updateTargets()
+	{
+		if (!hasPointer || !rect) {
+			targetX = 0;
+			targetY = 0;
+			targetOverlayOpacity = 0;
+			targetHoverOpacity = 0;
+			return;
+		}
+
+		const near = isNearContainer(mouseX, mouseY);
+
+		if (!near && !isInside) {
+			targetX = 0;
+			targetY = 0;
+			targetOverlayOpacity = 0;
+			targetHoverOpacity = 0;
+			return;
+		}
+
+		const offset = getNormalizedOffset(mouseX, mouseY);
+
+		targetX = offset.x * OVERLAY_SHIFT;
+		targetY = offset.y * OVERLAY_SHIFT;
+
+		if (isInside) {
+			const insideProximity = clamp(1 - offset.dist, 0, 1);
+
+			targetOverlayOpacity = 0.35 + insideProximity * 0.65;
+			targetHoverOpacity = 0.18 + insideProximity * 0.82;
+		} else {
+			const center = getCenter();
+			const dx = mouseX - center.x;
+			const dy = mouseY - center.y;
+
+			const nx = dx / ((rect.width + APPROACH_MARGIN * 2) * 0.5);
+			const ny = dy / ((rect.height + APPROACH_MARGIN * 2) * 0.5);
+			const dist = Math.min(Math.sqrt(nx * nx + ny * ny), 1.5);
+			const approach = clamp(1 - dist, 0, 1);
+
+			targetOverlayOpacity = approach * 0.45;
+			targetHoverOpacity = approach > 0.38 ? (approach - 0.38) / 0.62 * 0.55 : 0;
+		}
+	}
+
+	function render()
+	{
+		updateTargets();
+
+		currentX = lerp(currentX, targetX, POSITION_EASING);
+		currentY = lerp(currentY, targetY, POSITION_EASING);
+
+		currentOverlayOpacity = lerp(currentOverlayOpacity, targetOverlayOpacity, OPACITY_EASING);
+		currentHoverOpacity = lerp(currentHoverOpacity, targetHoverOpacity, OPACITY_EASING);
+
+		overlay.style.transform =
+			"translate3d(" + currentX.toFixed(2) + "px, " + currentY.toFixed(2) + "px, 0) scale(1.02)";
+
+		hoverImg.style.transform =
+			"translate3d(" + (currentX * (HOVER_SHIFT / OVERLAY_SHIFT)).toFixed(2) + "px, " +
+			(currentY * (HOVER_SHIFT / OVERLAY_SHIFT)).toFixed(2) + "px, 0) scale(1.01)";
+
+		overlay.style.opacity = currentOverlayOpacity.toFixed(3);
+		hoverImg.style.opacity = currentHoverOpacity.toFixed(3);
+
+		rafId = window.requestAnimationFrame(render);
+	}
+
+	function onPointerMove(event)
+	{
+		hasPointer = true;
+		mouseX = event.clientX;
+		mouseY = event.clientY;
+	}
+
+	function onPointerEnter(event)
+	{
+		isInside = true;
+		hasPointer = true;
+		mouseX = event.clientX;
+		mouseY = event.clientY;
+		updateRect();
+	}
+
+	function onPointerLeave()
+	{
+		isInside = false;
+	}
+
+	function onResizeOrScroll()
+	{
+		updateRect();
+	}
+
+	container.addEventListener("mouseenter", onPointerEnter);
+	container.addEventListener("mousemove", onPointerMove);
+	container.addEventListener("mouseleave", onPointerLeave);
+
+	window.addEventListener("mousemove", onPointerMove, { passive: true });
+	window.addEventListener("resize", onResizeOrScroll);
+	window.addEventListener("scroll", onResizeOrScroll, { passive: true });
+
+	updateRect();
+	rafId = window.requestAnimationFrame(render);
+})();
