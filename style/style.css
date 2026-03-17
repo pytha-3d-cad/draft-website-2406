@@ -238,6 +238,7 @@ a {
 	pointer-events: none;
 	user-select: none;
 	-webkit-user-drag: none;
+	transform: translate3d(0, 0, 0) scale(1);
 	transform-origin: center center;
 	backface-visibility: hidden;
 }
@@ -245,15 +246,13 @@ a {
 .overlay {
 	opacity: 0;
 	z-index: 1;
-	transform: translate3d(0, 0, 0) scale(1.02);
-	will-change: transform, opacity;
+	will-change: opacity;
 }
 
 .hover {
 	opacity: 0;
 	z-index: 2;
-	transform: translate3d(0, 0, 0) scale(1.01);
-	will-change: transform, opacity;
+	will-change: opacity;
 }
 
 .flicker {
@@ -264,4 +263,24 @@ a {
 	transform: none;
 	transition: none;
 	will-change: auto;
+}
+
+/* No-JS-Fallback */
+html:not(.js) .overlay,
+html:not(.js) .hover {
+	transition: opacity 0.25s ease;
+}
+
+html:not(.js) .image-container:hover .overlay {
+	opacity: 0.75;
+}
+
+html:not(.js) .image-container:hover .hover {
+	opacity: 1;
+}
+
+/* JS-Modus */
+html.js .overlay,
+html.js .hover {
+	transition: none;
 }
