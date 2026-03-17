@@ -225,7 +225,17 @@ container.addEventListener('touchend', stopFlicker);*/
 			const a = getApproach(instance);
 
 			instance.targetOverlayOpacity = a * 0.68;
-			instance.targetHoverOpacity = a > 0.18 ? (a - 0.18) / 0.82 * 0.42 : 0;
+			if (a > 0.05) {
+				let t = (a - 0.05) / 0.95;   // früher starten
+				t = clamp(t, 0, 1);
+			
+				// smoother easing
+				t = t * t * (3 - 2 * t);
+			
+				instance.targetHoverOpacity = t * 0.55;
+			} else {
+				instance.targetHoverOpacity = 0;
+			}
 		}
 	}
 
