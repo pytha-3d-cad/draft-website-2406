@@ -225,32 +225,55 @@ a {
   aspect-ratio: 1 / 1;
   margin: 4rem auto;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .image-container img {
-  position: absolute;       /* <-- key line for stacking */
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .overlay {
   opacity: 0;
-  transition: opacity 0.3s ease-out;
   z-index: 1;
+  transform: translate3d(0, 0, 0) scale(1.02);
+  transition:
+    opacity 0.18s ease-out,
+    transform 0.12s ease-out;
+  will-change: opacity, transform;
 }
 
 .hover {
   opacity: 0;
-  transition: opacity 0.4s ease-out;
   z-index: 2;
+  transform: translate3d(0, 0, 0) scale(1.01);
+  transition:
+    opacity 0.14s ease-out,
+    transform 0.10s ease-out;
+  will-change: opacity, transform;
 }
 
+/* flicker komplett deaktiviert */
 .flicker {
+  display: none;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease-in-out;
-  z-index: 3;
+  z-index: 0;
+  transition: none;
+}
+
+/* optional: beim direkten Hover schon sichtbar */
+.image-container:hover .overlay {
+  opacity: 1;
+}
+
+.image-container:hover .hover {
+  opacity: 1;
 }
