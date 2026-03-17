@@ -63,49 +63,26 @@ container.addEventListener('touchend', stopFlicker);*/
 
 (function()
 {
-	const container = document.getElementById("imageContainer");
-	const overlay = document.getElementById("overlay");
-	const hoverImg = document.getElementById("hover");
-	const flicker = document.getElementById("flicker");
+	const containers = document.querySelectorAll(".image-container");
 
-	if (!container || !overlay || !hoverImg) {
-		return;
-	}
+	if (!containers.length) return;
 
-	if (flicker) {
-		flicker.style.display = "none";
-		flicker.style.opacity = "0";
-	}
-
-	let rect = null;
+	const APPROACH_MARGIN = 260;
+	const OPACITY_EASING = 0.09;
+	const EDGE_FADE_REM = 2;
 
 	let mouseX = 0;
 	let mouseY = 0;
 	let hasPointer = false;
-	let isInside = false;
 
-	let currentOverlayOpacity = 0;
-	let currentHoverOpacity = 0;
-	let targetOverlayOpacity = 0;
-	let targetHoverOpacity = 0;
-
-	const APPROACH_MARGIN = 300;
-	const OPACITY_EASING = 0.09;
-	const EDGE_FADE_REM = 1.5;
-
-	function clamp(value, min, max)
+	function clamp(v, min, max)
 	{
-		return Math.max(min, Math.min(max, value));
+		return Math.max(min, Math.min(max, v));
 	}
 
-	function lerp(current, target, factor)
+	function lerp(a, b, t)
 	{
-		return current + (target - current) * factor;
-	}
-
-	function updateRect()
-	{
-		rect = container.getBoundingClientRect();
+		return a + (b - a) * t;
 	}
 
 	function getRootFontSize()
@@ -113,136 +90,166 @@ container.addEventListener('touchend', stopFlicker);*/
 		return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
 	}
 
-	function isNearContainer(clientX, clientY)
+	function createInstance(container)
 	{
-		if (!rect) {
-			updateRect();
+		const overlay = container.querySelector(".overlay");
+		const hoverImg = container.querySelector(".hover");
+		const flicker = container.querySelector(".flicker");
+
+		if (!overlay || !hoverImg) return null;
+
+		if (flicker) {
+			flicker.style.display = "none";
+			flicker.style.opacity = "0";
 		}
 
+		return {
+			container,
+			overlay,
+			hoverImg,
+			rect: null,
+			isInside: false,
+			currentOverlayOpacity: 0,
+			currentHoverOpacity: 0,
+			targetOverlayOpacity: 0,
+			targetHoverOpacity: 0
+		};
+	}
+
+	const instances = Array.from(containers)
+		.map(createInstance)
+		.filter(Boolean);
+
+	function updateRect(instance)
+	{
+		instance.rect = instance.container.getBoundingClientRect();
+	}
+
+	function isNear(instance)
+	{
+		const r = instance.rect;
+
 		return (
-			clientX >= rect.left - APPROACH_MARGIN &&
-			clientX <= rect.right + APPROACH_MARGIN &&
-			clientY >= rect.top - APPROACH_MARGIN &&
-			clientY <= rect.bottom + APPROACH_MARGIN
+			mouseX >= r.left - APPROACH_MARGIN &&
+			mouseX <= r.right + APPROACH_MARGIN &&
+			mouseY >= r.top - APPROACH_MARGIN &&
+			mouseY <= r.bottom + APPROACH_MARGIN
 		);
 	}
 
-	function getInsideEdgeProximity(clientX, clientY)
+	function getEdgeProximity(instance)
 	{
-		if (!rect) {
-			updateRect();
-		}
-
+		const r = instance.rect;
 		const edgeFadePx = EDGE_FADE_REM * getRootFontSize();
 
-		const distLeft = clientX - rect.left;
-		const distRight = rect.right - clientX;
-		const distTop = clientY - rect.top;
-		const distBottom = rect.bottom - clientY;
+		const d = Math.min(
+			mouseX - r.left,
+			r.right - mouseX,
+			mouseY - r.top,
+			r.bottom - mouseY
+		);
 
-		const minEdgeDist = Math.min(distLeft, distRight, distTop, distBottom);
-
-		return clamp(minEdgeDist / edgeFadePx, 0, 1);
+		return clamp(d / edgeFadePx, 0, 1);
 	}
 
-	function getApproachProximity(clientX, clientY)
+	function getApproach(instance)
 	{
-		if (!rect) {
-			updateRect();
-		}
+		const r = instance.rect;
 
 		const dx =
-			clientX < rect.left ? rect.left - clientX :
-			clientX > rect.right ? clientX - rect.right : 0;
+			mouseX < r.left ? r.left - mouseX :
+			mouseX > r.right ? mouseX - r.right : 0;
 
 		const dy =
-			clientY < rect.top ? rect.top - clientY :
-			clientY > rect.bottom ? clientY - rect.bottom : 0;
+			mouseY < r.top ? r.top - mouseY :
+			mouseY > r.bottom ? mouseY - r.bottom : 0;
 
 		const dist = Math.sqrt(dx * dx + dy * dy);
 
 		return clamp(1 - dist / APPROACH_MARGIN, 0, 1);
 	}
 
-	function updateTargets()
+	function updateTargets(instance)
 	{
-		if (!hasPointer || !rect) {
-			targetOverlayOpacity = 0;
-			targetHoverOpacity = 0;
+		if (!hasPointer || !instance.rect) {
+			instance.targetOverlayOpacity = 0;
+			instance.targetHoverOpacity = 0;
 			return;
 		}
 
-		const near = isNearContainer(mouseX, mouseY);
+		const near = isNear(instance);
 
-		if (!near && !isInside) {
-			targetOverlayOpacity = 0;
-			targetHoverOpacity = 0;
+		if (!near && !instance.isInside) {
+			instance.targetOverlayOpacity = 0;
+			instance.targetHoverOpacity = 0;
 			return;
 		}
 
-		if (isInside) {
-			const edgeProximity = getInsideEdgeProximity(mouseX, mouseY);
+		if (instance.isInside) {
+			const edge = getEdgeProximity(instance);
 
-			targetOverlayOpacity = 0.55 + edgeProximity * 0.45;
-			targetHoverOpacity = 0.82 + edgeProximity * 0.18;
-		} else {
-			const approach = getApproachProximity(mouseX, mouseY);
+			instance.targetOverlayOpacity = 0.55 + edge * 0.45;
+			instance.targetHoverOpacity = 0.70 + edge * 0.30;
+		}
+		else {
+			const a = getApproach(instance);
 
-			targetOverlayOpacity = approach * 0.68;
-			targetHoverOpacity = approach > 0.18 ? (approach - 0.18) / 0.82 * 0.42 : 0;
+			instance.targetOverlayOpacity = a * 0.68;
+			instance.targetHoverOpacity = a > 0.18 ? (a - 0.18) / 0.82 * 0.42 : 0;
 		}
 	}
 
 	function render()
 	{
-		updateTargets();
+		for (const inst of instances)
+		{
+			updateTargets(inst);
 
-		currentOverlayOpacity = lerp(currentOverlayOpacity, targetOverlayOpacity, OPACITY_EASING);
-		currentHoverOpacity = lerp(currentHoverOpacity, targetHoverOpacity, OPACITY_EASING);
+			inst.currentOverlayOpacity = lerp(inst.currentOverlayOpacity, inst.targetOverlayOpacity, OPACITY_EASING);
+			inst.currentHoverOpacity = lerp(inst.currentHoverOpacity, inst.targetHoverOpacity, OPACITY_EASING);
 
-		overlay.style.opacity = currentOverlayOpacity.toFixed(3);
-		hoverImg.style.opacity = currentHoverOpacity.toFixed(3);
+			inst.overlay.style.opacity = inst.currentOverlayOpacity.toFixed(3);
+			inst.hoverImg.style.opacity = inst.currentHoverOpacity.toFixed(3);
+		}
 
-		overlay.style.transform = "translate3d(0, 0, 0) scale(1)";
-		hoverImg.style.transform = "translate3d(0, 0, 0) scale(1)";
-
-		window.requestAnimationFrame(render);
+		requestAnimationFrame(render);
 	}
 
-	function onPointerMove(event)
+	function onPointerMove(e)
 	{
 		hasPointer = true;
-		mouseX = event.clientX;
-		mouseY = event.clientY;
-	}
-
-	function onPointerEnter(event)
-	{
-		isInside = true;
-		hasPointer = true;
-		mouseX = event.clientX;
-		mouseY = event.clientY;
-		updateRect();
-	}
-
-	function onPointerLeave()
-	{
-		isInside = false;
+		mouseX = e.clientX;
+		mouseY = e.clientY;
 	}
 
 	function onResizeOrScroll()
 	{
-		updateRect();
+		for (const inst of instances) {
+			updateRect(inst);
+		}
 	}
 
-	container.addEventListener("mouseenter", onPointerEnter);
-	container.addEventListener("mousemove", onPointerMove);
-	container.addEventListener("mouseleave", onPointerLeave);
+	for (const inst of instances)
+	{
+		inst.container.addEventListener("mouseenter", (e) =>
+		{
+			inst.isInside = true;
+			mouseX = e.clientX;
+			mouseY = e.clientY;
+			updateRect(inst);
+		});
+
+		inst.container.addEventListener("mouseleave", () =>
+		{
+			inst.isInside = false;
+		});
+
+		updateRect(inst);
+	}
 
 	window.addEventListener("mousemove", onPointerMove, { passive: true });
 	window.addEventListener("resize", onResizeOrScroll);
 	window.addEventListener("scroll", onResizeOrScroll, { passive: true });
 
-	updateRect();
-	window.requestAnimationFrame(render);
+	requestAnimationFrame(render);
 })();
